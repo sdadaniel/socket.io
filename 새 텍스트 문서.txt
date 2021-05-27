@@ -1,4 +1,0 @@
-# : comments
-
-*.env
-node_modules/
