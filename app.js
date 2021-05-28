@@ -6,18 +6,32 @@ const router = require("./router");
 const cookieParser = require("cookie-parser")
 const path = require("path")
 const {session} = require("./middleware");
+const {sequelize} = require("./models");
 
 
 class App {
     constructor() {
         this.app = express()
         this.middleware()
+        this.dbConnection()
         this.routing()
         this.errorHandling()
     }
 
     routing() {
         this.app.use(router)
+    }
+
+    dbConnection(){
+        sequelize.sync()
+        .then(()=>{
+            console.log("Mysql Connected")
+        })
+        .catch((e)=>{
+            console.error("Mysql Connection Failed")
+            console.error(e)
+        })
+
     }
 
     middleware() {
@@ -34,7 +48,12 @@ class App {
 
 
         //Dev
-        this.app.use(morgan("dev"))
+        if(process.env.NODE_ENV === "production"){
+            this.app.use(morgan("combined"))
+        }else{
+            this.app.use(morgan("dev"))
+        }
+        
 
 
         //Front

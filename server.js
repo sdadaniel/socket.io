@@ -1,7 +1,9 @@
-const app = require("./app.js")
+const app = require("./app.js");
 
-app.set("PORT", 8000)
+if(!process.env.PORT){
+    process.env.PORT = 8000
+}
 
-app.listen(app.get("PORT"), (() => {
-    console.log(`${app.get("PORT")}대기중`)
+app.listen(process.env.PORT, (() => {
+    console.log(`${process.env.PORT}대기중`)
 }))
