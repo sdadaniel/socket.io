@@ -1,24 +1,15 @@
 const express = require("express");
 const nunjucks = require("nunjucks");
-const dotenv = require("dotenv").config();
 const morgan = require("morgan");
 const router = require("./router");
 const cookieParser = require("cookie-parser")
-const path = require("path")
-const {
-  session
-} = require("./middleware");
-// const {
-//   sequelize
-// } = require("./db/models");
-const mongoConnect = require("./db/schemas")
-
+const session = require("express-session");
+require("dotenv").config();
 
 class App {
   constructor() {
     this.app = express()
     this.middleware()
-    // this.dbConnection()
     this.routing()
     this.errorHandling()
   }
@@ -27,31 +18,20 @@ class App {
     this.app.use(router)
   }
 
-  dbConnection() {
-    mongoConnect()
-    // sequelize.sync()
-    // .then(()=>{
-    //     console.log("Mysql Connected")
-    // })
-    // .catch((e)=>{
-    //     console.error("Mysql Connection Failed")
-    //     console.error(e)
-    // })
-
-  }
-
   middleware() {
     //Init
     this.app.use(express.json())
     this.app.use(express.urlencoded({
       extended: false
     }))
-    this.app.use(express.static(path.join(__dirname, "public")))
 
     //Session
     this.app.use(cookieParser(process.env.COOKIE_SECRET))
-    this.app.use(session)
-
+    this.app.use(session({
+      resave: false,
+      saveUninitialized: false,
+      secret: process.env.COOKIE_SECRET,
+    }))
 
     //Dev
     if (process.env.NODE_ENV === "production") {
@@ -59,8 +39,6 @@ class App {
     } else {
       this.app.use(morgan("dev"))
     }
-
-
 
     //Front
     this.app.set("view engine", "html")

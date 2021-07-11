@@ -15,9 +15,6 @@
 </head>
 
 <body>
-  <div class="container-fluid">
-
-  </div>
   <div class="row">
     <div class="col-md-6 ">
       <div class="row">
@@ -53,7 +50,6 @@
               Room List
             </div>
             <div class="card-body">
-
             </div>
           </div>
         </div>
@@ -61,11 +57,11 @@
     </div>
 
     <div class="col-md-6 ">
-      <!-- Current -->
+      <!-- Current Room-->
       <div class="row">
         <div class="card-header">
           <p class="rounded">현재방: <span class="roomName">NONE</span></p>
-          <div class="btn btn-primary d-inline" onclick="leaveRoom()">방나가기</div>
+          <div class="btn btn-primary d-inline disabled exit-room" onclick="leaveRoom()">방나가기</div>
         </div>
 
       </div>
@@ -78,7 +74,7 @@
           <input type="text" class="form-control msg" placeholder="Recipient's username"
             aria-label="Recipient's username" aria-describedby="basic-addon2">
           <div class="input-group-append">
-            <span class="btn btn-primary" onclick="sendMsg()" id="basic-addon2">보내기</span>
+            <span class="btn btn-primary send-msg disabled" onclick="sendMsg()" id="basic-addon2">보내기</span>
           </div>
         </div>
       </div>
@@ -117,10 +113,27 @@
     })
   })
 
-
   socket.on("msg", (data) => {
     $(".chatting").append(`<p>${data}</p>`)
   })
+
+  socket.on("createRoom", (roomName) => {
+    var obj = $(
+      `<div class='d-flex justify-content-between align-item-center border p-1 mb-2' data-name=${roomName}></div>`
+    )
+    obj.append(`<span class='flex-grow-1'>${roomName}</span>`)
+    $(".current-room .card-body").prepend(obj)
+    obj.append(
+      `<span class='btn btn-sm btn-primary text-right delete mx-1' onclick='deleteRoom(this)'>삭제</span>`)
+    obj.append(
+      `<span class='btn btn-sm btn-primary text-right enter mx-1' onclick="joinRoom(this)">입장</span>`)
+  })
+
+  socket.on("deleteRoom", (roomName) => {
+    $(`[data-name=${roomName}]`).remove()
+
+  })
+
 
   const createRoom = function () {
     const flag = confirm("방을 생성하시겠습니다?")
@@ -129,32 +142,36 @@
       socket.emit("createRoom", roomName);
       $(".room-name").val("");
 
-      var obj = $(
-        `<div class='d-flex justify-content-between align-item-center border p-1 mb-2' data-name=${roomName}></div>`
-      )
-      obj.append(`<span class='flex-grow-1'>${roomName}</span>`)
-      $(".current-room .card-body").prepend(obj)
-      obj.append(
-        `<span class='btn btn-sm btn-primary text-right delete mx-1' onclick='deleteRoom(this)'>삭제</span>`)
-      obj.append(
-        `<span class='btn btn-sm btn-primary text-right enter mx-1' onclick="joinRoom(this)">입장</span>`)
     }
   }
 
   const deleteRoom = function (e) {
-    $(e).parent().remove()
-    socket.emit("deleteRoom", $(e).parent().data("name"))
+    const flag = confirm("삭제하시겠습니까?")
+    flag && socket.emit("deleteRoom", $(e).parent().data("name"))
   }
 
   const joinRoom = function (e) {
+    if ($(".roomName").text() == "NONE") {
+      socket.emit("leaveRoom", $(".roomName").text())
+      $(".exit-room").removeClass("disabled")
+      $(".send-msg").removeClass("disabled")
+
+
+    }
+
+
     socket.emit("joinRoom", $(e).parent().data("name"))
     $(".roomName").text($(e).parent().data("name"))
   }
 
   const leaveRoom = function () {
-    $(".roomName").text("NONE")
+
     socket.emit("leaveRoom", $(".roomName").text())
+    $(".roomName").text("NONE")
     $(".chatting").empty()
+
+    $(".exit-room").addClass("disabled")
+    $(".send-msg").addClass("disabled")
 
   }
 
