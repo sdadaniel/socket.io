@@ -1,13 +1,171 @@
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <h1>IndexPage</h1>
-    <h1>IndexPage2</h1>
+<html>
 
+<head>
+  <meta charset="utf-8">
+  <title>Socket</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+    integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous">
+  </script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+    integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+</head>
+
+<body>
+  <div class="container-fluid">
+
+  </div>
+  <div class="row">
+    <div class="col-md-6 ">
+      <div class="row">
+        <!-- Join Room -->
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              Join Room
+            </div>
+            <div class="card-body" style="height:300px;">
+              <!-- Name of Chatting Room -->
+              <label for="name">Name</label>
+              <div class="input-group mb-3">
+                <input type="text" class="form-control room-name" placeholder="Chat Room name"
+                  aria-label="Recipient's username" aria-describedby="basic-addon2">
+              </div>
+
+              <div class="btn btn-primary ws-send" onclick="createRoom()">
+                Run
+              </div>
+
+            </div>
+            <div class="card-footer">
+              test
+            </div>
+          </div>
+        </div>
+
+        <!-- Room List -->
+        <div class="col-md-6">
+          <div class="card current-room">
+            <div class="card-header">
+              Room List
+            </div>
+            <div class="card-body">
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 ">
+      <!-- Current -->
+      <div class="row">
+        <div class="card-header">
+          <p class="rounded">현재방: <span class="roomName">NONE</span></p>
+          <div class="btn btn-primary d-inline" onclick="leaveRoom()">방나가기</div>
+        </div>
+
+      </div>
+      <div class="row">
+        <div class="chatting" style="height:calc( 80vh);background:#eee">
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-group mb-3">
+          <input type="text" class="form-control msg" placeholder="Recipient's username"
+            aria-label="Recipient's username" aria-describedby="basic-addon2">
+          <div class="input-group-append">
+            <span class="btn btn-primary" onclick="sendMsg()" id="basic-addon2">보내기</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+
+  </div>
 </body>
+
+
+<script src="https://cdn.socket.io/4.1.2/socket.io.min.js"
+  integrity="sha384-toS6mmwu70G0fw54EGlWWeA4z3dyJ+dlXBtSURSKN4vyRFOcxd3Bzjj/AoOwY+Rg" crossorigin="anonymous">
+</script>
+<script>
+  const URL = location.origin + "/room"
+
+  const socket = io.connect(URL)
+
+
+  // 방 초기화
+  $(document).ready(function () {
+    socket.on("init", (data) => {
+      data.map(elem => {
+        var obj = $(
+          `<div class='d-flex justify-content-between align-item-center border p-1 mb-2' data-name=${elem.name}></div>`
+        )
+        obj.append(`<span class='flex-grow-1'>${elem.name}</span>`)
+        $(".current-room .card-body").prepend(obj)
+        obj.append(
+          `<span class='btn btn-sm btn-primary text-right delete mx-1' onclick='deleteRoom(this)'>삭제</span>`
+        )
+        obj.append(
+          `<span class='btn btn-sm btn-primary text-right enter mx-1' onclick="joinRoom(this)">입장</span>`)
+      })
+    })
+  })
+
+
+  socket.on("msg", (data) => {
+    $(".chatting").append(`<p>${data}</p>`)
+  })
+
+  const createRoom = function () {
+    const flag = confirm("방을 생성하시겠습니다?")
+    if (flag) {
+      const roomName = $(".room-name").val();
+      socket.emit("createRoom", roomName);
+      $(".room-name").val("");
+
+      var obj = $(
+        `<div class='d-flex justify-content-between align-item-center border p-1 mb-2' data-name=${roomName}></div>`
+      )
+      obj.append(`<span class='flex-grow-1'>${roomName}</span>`)
+      $(".current-room .card-body").prepend(obj)
+      obj.append(
+        `<span class='btn btn-sm btn-primary text-right delete mx-1' onclick='deleteRoom(this)'>삭제</span>`)
+      obj.append(
+        `<span class='btn btn-sm btn-primary text-right enter mx-1' onclick="joinRoom(this)">입장</span>`)
+    }
+  }
+
+  const deleteRoom = function (e) {
+    $(e).parent().remove()
+    socket.emit("deleteRoom", $(e).parent().data("name"))
+  }
+
+  const joinRoom = function (e) {
+    socket.emit("joinRoom", $(e).parent().data("name"))
+    $(".roomName").text($(e).parent().data("name"))
+  }
+
+  const leaveRoom = function () {
+    $(".roomName").text("NONE")
+    socket.emit("leaveRoom", $(".roomName").text())
+    $(".chatting").empty()
+
+  }
+
+  const sendMsg = function () {
+    const data = {
+      msg: $(".msg").val(),
+      roomName: $(".roomName").text()
+    }
+    $(".msg").val("")
+    socket.emit("msg", data)
+  }
+</script>
+
 </html>

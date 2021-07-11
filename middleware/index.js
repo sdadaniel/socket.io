@@ -15,11 +15,13 @@ exports.session = (req,res,next) => {
         resave: false,
         saveUninitialized: false,
         secret: process.env.COOKIE_SECRET,
-        store: new RedisStore({client: redisClient})
+        // store: new RedisStore({client: redisClient})
     }
+
     if(process.env.NODE_ENV === "production"){
         sessionOption.proxy = true;
     }
+    
     session(sessionOption)
 
     next()
